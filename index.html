@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Lost & Found - SSSC</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="loginPage" class="full-screen">
+        <div class="login-card">
+            <h2 style="color:#1a1a4b">LÖST & FÖUND</h2>
+            <p>ลงชื่อเข้าใช้ด้วยอีเมล</p>
+            <input type="email" id="loginEmail" placeholder="example@email.com">
+            <button class="btn-login" onclick="handleLogin()">เข้าสู่ระบบ</button>
+        </div>
+    </div>
+
+    <div id="mainPage" class="main-container hidden">
+        <div class="header">
+            <h1>LÖST & FÖUND</h1>
+            <button class="btn-logout" onclick="handleLogout()">Logout</button>
+        </div>
+        
+        <div class="input-section">
+            <input type="text" id="itemName" placeholder="รายละเอียดสิ่งของ">
+            <input type="text" id="itemLocation" placeholder="สถานที่พบ">
+            <input type="file" id="itemImage" accept="image/*" style="display:none;" onchange="updateFileName()">
+            <button class="btn-file" onclick="document.getElementById('itemImage').click()">📸 <span id="fileName">เลือกรูปภาพ</span></button>
+            <button class="btn-save" onclick="showConfirmModal()">บันทึกข้อมูล</button>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>วัน-เวลา</th>
+                    <th>ผู้แจ้ง</th>
+                    <th>รายละเอียด</th>
+                    <th>ภาพสิ่งของ</th>
+                    <th>จัดการ</th>
+                </tr>
+            </thead>
+            <tbody id="displayArea"></tbody>
+        </table>
+    </div>
+
+    <div id="confirmModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>ยืนยันบันทึกข้อมูล?</h3>
+            <p id="confirmDetails"></p>
+            <div class="modal-btn-group">
+                <button class="btn-no" onclick="closeModal()">ยกเลิก</button>
+                <button class="btn-yes" onclick="saveData()">ตกลง</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
