@@ -2,59 +2,207 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Lost & Found - SSSC</title>
+    <title>Lost & Found - Realtime DB</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+    <div id="loading" class="hidden">กำลังโหลดข้อมูล...</div>
+
     <div id="loginPage" class="full-screen">
         <div class="login-card">
-            <h2 style="color:#1a1a4b">LÖST & FÖUND</h2>
-            <p>ลงชื่อเข้าใช้ด้วยอีเมล</p>
-            <input type="email" id="loginEmail" placeholder="example@email.com">
+            <h2>LOST & FOUND</h2>
+            <p>ของใคร ใครก็รัก</p>
+            <input type="email" id="loginEmail" placeholder="กรอกอีเมลของคุณ (ใส่ @gmail.com)">
             <button class="btn-login" onclick="handleLogin()">เข้าสู่ระบบ</button>
         </div>
     </div>
 
     <div id="mainPage" class="main-container hidden">
         <div class="header">
-            <h1>LÖST & FÖUND</h1>
-            <button class="btn-logout" onclick="handleLogout()">Logout</button>
-        </div>
-        
-        <div class="input-section">
-            <input type="text" id="itemName" placeholder="รายละเอียดสิ่งของ">
-            <input type="text" id="itemLocation" placeholder="สถานที่พบ">
-            <input type="file" id="itemImage" accept="image/*" style="display:none;" onchange="updateFileName()">
-            <button class="btn-file" onclick="document.getElementById('itemImage').click()">📸 <span id="fileName">เลือกรูปภาพ</span></button>
-            <button class="btn-save" onclick="showConfirmModal()">บันทึกข้อมูล</button>
+            <h1 style="margin:0;">LOST & FOUND</h1>
+            <div>
+                <span id="userDisplay" style="margin-right:15px;"></span>
+                <button onclick="handleLogout()" style="cursor:pointer;">Logout</button>
+            </div>
         </div>
 
-        <table class="data-table">
+        <div class="input-section">
+            <input type="text" id="itemName" placeholder="Info (รายละเอียด)">
+            <input type="text" id="itemLocation" placeholder="Place (สถานที่)">
+            <input type="file" id="itemImage" accept="image/*" style="display:none;" onchange="document.getElementById('fileName').innerText = this.files[0].name">
+            <button onclick="document.getElementById('itemImage').click()">📸 <span id="fileName">เลือกรูป</span></button>
+            <button class="btn-save" onclick="saveData()">บันทึกข้อมูล</button>
+        </div>
+
+        <table>
             <thead>
                 <tr>
-                    <th>วัน-เวลา</th>
-                    <th>ผู้แจ้ง</th>
+                    <th>วันที่</th>
+                    <th>ผู้เก็บได้</th>
                     <th>รายละเอียด</th>
-                    <th>ภาพสิ่งของ</th>
-                    <th>จัดการ</th>
+                    <th>สถานที่ที่เก็บได้</th>
+                    <th>รูปภาพ</th>
+                    <th>แก้ไข</th>
                 </tr>
             </thead>
             <tbody id="displayArea"></tbody>
         </table>
     </div>
 
-    <div id="confirmModal" class="modal hidden">
-        <div class="modal-content">
-            <h3>ยืนยันบันทึกข้อมูล?</h3>
-            <p id="confirmDetails"></p>
-            <div class="modal-btn-group">
-                <button class="btn-no" onclick="closeModal()">ยกเลิก</button>
-                <button class="btn-yes" onclick="saveData()">ตกลง</button>
-            </div>
-        </div>
-    </div>
+    <script>
+        // ******************************************************
+        // 🔴 วาง URL ที่ได้จาก App Script ตรงนี้ (ห้ามลืม!)
+        const API_URL = "https://script.google.com/macros/s/AKfycbyGa1mwedpYaRpMG3rnAvd4nzCUKfiHqvdKGqbfQtpf7ByqQn1cdw8Zp7CuRD-Eq1f4/exec"; 
+        // ******************************************************
 
-    <script src="script.js"></script>
+        let currentUser = localStorage.getItem('API_USER');
+
+        window.onload = () => {
+            if (currentUser) {
+                showMainPage();
+            } else {
+                document.getElementById('loginPage').classList.remove('hidden');
+            }
+        };
+
+        function showLoading(show) {
+            const el = document.getElementById('loading');
+            if(show) el.classList.remove('hidden');
+            else el.classList.add('hidden');
+        }
+
+        function showMainPage() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('mainPage').classList.remove('hidden');
+            document.getElementById('userDisplay').innerText = currentUser;
+            fetchData(); // ดึงข้อมูลทันทีเมื่อเข้าหน้าหลัก
+        }
+
+        // --- 1. Login โดยการเช็คจาก Sheet Users ---
+        function handleLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            if(!email) return alert("กรุณากรอกอีเมล");
+
+            showLoading(true);
+            
+            // ยิงไปที่ App Script เพื่อขอรายชื่อ User
+            fetch(API_URL + "?action=getUsers")
+            .then(res => res.json())
+            .then(users => {
+                showLoading(false);
+                const validUser = users.find(u => u.email === email);
+                
+                if (validUser) {
+                    currentUser = validUser.email;
+                    localStorage.setItem('API_USER', currentUser);
+                    showMainPage();
+                } else {
+                    alert("ไม่พบอีเมลนี้ใน Sheet 'Users'");
+                }
+            })
+            .catch(err => {
+                showLoading(false);
+                alert("เชื่อมต่อ Server ไม่ได้: " + err);
+            });
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('API_USER');
+            location.reload();
+        }
+
+        // --- 2. บันทึกข้อมูลลง Sheet Data ---
+        function saveData() {
+            const name = document.getElementById('itemName').value;
+            const loc = document.getElementById('itemLocation').value;
+            const fileInput = document.getElementById('itemImage');
+
+            if(!name || !loc) return alert("กรอกข้อมูลให้ครบ");
+
+            showLoading(true);
+
+            // ฟังก์ชันส่งข้อมูล
+            const sendPost = (base64Img) => {
+                const payload = {
+                    action: 'save',
+                    owner: currentUser,
+                    name: name,
+                    loc: loc,
+                    img: base64Img || ""
+                };
+
+                fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                })
+                .then(res => res.text())
+                .then(data => {
+                    showLoading(false);
+                    alert("บันทึกสำเร็จ!");
+                    // เคลียร์ค่า
+                    document.getElementById('itemName').value = "";
+                    document.getElementById('itemLocation').value = "";
+                    fileInput.value = "";
+                    document.getElementById('fileName').innerText = "เลือกรูป";
+                    fetchData(); // โหลดตารางใหม่
+                })
+                .catch(err => {
+                    showLoading(false);
+                    alert("Error: " + err);
+                });
+            };
+
+            // แปลงรูปเป็น Base64 (ถ้ามี)
+            if (fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => sendPost(e.target.result);
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                sendPost("");
+            }
+        }
+
+        // --- 3. ดึงข้อมูลจาก Sheet Data มาแสดง ---
+        function fetchData() {
+            showLoading(true);
+            fetch(API_URL + "?action=getData")
+            .then(res => res.json())
+            .then(data => {
+                showLoading(false);
+                const tbody = document.getElementById('displayArea');
+                tbody.innerHTML = "";
+
+                // เรียงจากใหม่ไปเก่า
+                data.reverse().forEach(item => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${item.time}</td>
+                            <td>${item.owner}</td>
+                            <td>${item.name}</td>
+                            <td>${item.loc}</td>
+                            <td>${item.img ? `<img src="${item.img}" class="thumb-img">` : '-'}</td>
+                            <td><button onclick="deleteItem('${item.id}')" style="color:red;cursor:pointer;">ลบ</button></td>
+                        </tr>
+                    `;
+                });
+            });
+        }
+
+        // --- 4. ลบข้อมูล ---
+        function deleteItem(id) {
+            if(!confirm("ต้องการลบแถวนี้ใช่ไหม?")) return;
+            
+            showLoading(true);
+            fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'delete', id: id })
+            })
+            .then(res => res.text())
+            .then(data => {
+                fetchData(); // โหลดข้อมูลใหม่
+            });
+        }
+    </script>
 </body>
 </html>
