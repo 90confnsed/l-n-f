@@ -1,55 +1,128 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Lost & Found - Realtime DB</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
     <div id="loading" class="hidden">กำลังโหลดข้อมูล...</div>
 
-    <div id="loginPage" class="full-screen">
-        <div class="login-card">
-            <h2>LOST & FOUND</h2>
-            <p>ของใคร ใครก็รัก</p>
-            <input type="email" id="loginEmail" placeholder="กรอกอีเมลของคุณ (ใส่ @gmail.com)">
-            <button class="btn-login" onclick="handleLogin()">เข้าสู่ระบบ</button>
+    <div id="authContainer" class="full-screen">
+      <!-- Login Card -->
+      <div id="loginCard" class="login-card">
+        <h2>LOST & FOUND</h2>
+        <p>ของใคร ใครก็รัก</p>
+        <input
+          type="text"
+          id="loginInput"
+          placeholder="อีเมล หรือ รหัสนักเรียน"
+        />
+        <input type="password" id="loginPassword" placeholder="รหัสผ่าน" />
+        <button class="btn-login" onclick="handleLogin()">เข้าสู่ระบบ</button>
+        <p style="margin-top: 15px; font-size: 0.9rem">
+          ยังไม่มีบัญชี? <a href="#" onclick="showRegister()">ลงทะเบียน</a>
+        </p>
+      </div>
+
+      <!-- Register Card -->
+      <div id="registerCard" class="login-card hidden">
+        <h2>ลงทะเบียน</h2>
+        <p>สมัคสมาชิกใหม่</p>
+        <input type="email" id="regEmail" placeholder="อีเมล (@gmail.com)" />
+        <input type="text" id="regName" placeholder="ชื่อ" />
+        <input type="text" id="regSurname" placeholder="นามสกุล" />
+        <div style="display: flex; gap: 10px">
+          <select
+            id="regLevel"
+            style="
+              margin: 10px 0;
+              padding: 10px;
+              border: 1px solid #ddd;
+              border-radius: 5px;
+              flex: 1;
+            "
+          >
+            <option value="" disabled selected>ชั้น</option>
+            <option value="ม.1">ม.1</option>
+            <option value="ม.2">ม.2</option>
+            <option value="ม.3">ม.3</option>
+            <option value="ม.4">ม.4</option>
+            <option value="ม.5">ม.5</option>
+            <option value="ม.6">ม.6</option>
+          </select>
+          <input
+            type="text"
+            id="regRoom"
+            placeholder="ห้อง (เช่น 1)"
+            style="margin: 10px 0"
+          />
+          <input
+            type="text"
+            id="regNo"
+            placeholder="เลขที่"
+            style="margin: 10px 0"
+          />
         </div>
+        <input
+          type="text"
+          id="regStudentId"
+          placeholder="เลขประจำตัวนักเรียน"
+        />
+        <input type="password" id="regPassword" placeholder="ตั้งรหัสผ่าน" />
+        <button class="btn-primary" onclick="handleRegister()">
+          ยืนยันการลงทะเบียน
+        </button>
+        <p style="margin-top: 15px; font-size: 0.9rem">
+          มีบัญชีแล้ว? <a href="#" onclick="showLogin()">เข้าสู่ระบบ</a>
+        </p>
+      </div>
     </div>
 
     <div id="mainPage" class="main-container hidden">
-        <div class="header">
-            <h1 style="margin:0;">LOST & FOUND</h1>
-            <div>
-                <span id="userDisplay" style="margin-right:15px;"></span>
-                <button onclick="handleLogout()" style="cursor:pointer;">Logout</button>
-            </div>
+      <div class="header">
+        <h1 style="margin: 0">LOST & FOUND</h1>
+        <div>
+          <span id="userDisplay" style="margin-right: 15px"></span>
+          <button onclick="handleLogout()" style="cursor: pointer">
+            Logout
+          </button>
         </div>
+      </div>
 
-        <div class="input-section">
-            <input type="text" id="itemName" placeholder="Info (รายละเอียด)">
-            <input type="text" id="itemLocation" placeholder="Place (สถานที่)">
-            <input type="file" id="itemImage" accept="image/*" style="display:none;" onchange="document.getElementById('fileName').innerText = this.files[0].name">
-            <button onclick="document.getElementById('itemImage').click()">📸 <span id="fileName">เลือกรูป</span></button>
-            <button class="btn-save" onclick="saveData()">บันทึกข้อมูล</button>
-        </div>
+      <div class="input-section">
+        <input type="text" id="itemName" placeholder="Info (รายละเอียด)" />
+        <input type="text" id="itemLocation" placeholder="Place (สถานที่)" />
+        <input
+          type="file"
+          id="itemImage"
+          accept="image/*"
+          style="display: none"
+          onchange="
+            document.getElementById('fileName').innerText = this.files[0].name
+          "
+        />
+        <button onclick="document.getElementById('itemImage').click()">
+          📸 <span id="fileName">เลือกรูป</span>
+        </button>
+        <button class="btn-save" onclick="saveData()">บันทึกข้อมูล</button>
+      </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>วันที่</th>
-                    <th>ผู้เก็บได้</th>
-                    <th>รายละเอียด</th>
-                    <th>สถานที่ที่เก็บได้</th>
-                    <th>รูปภาพ</th>
-                    <th>แก้ไข</th>
-                </tr>
-            </thead>
-            <tbody id="displayArea"></tbody>
-        </table>
+      <table>
+        <thead>
+          <tr>
+            <th>วันที่</th>
+            <th>ผู้เก็บได้</th>
+            <th>รายละเอียด</th>
+            <th>สถานที่ที่เก็บได้</th>
+            <th>รูปภาพ</th>
+            <th>แก้ไข</th>
+          </tr>
+        </thead>
+        <tbody id="displayArea"></tbody>
+      </table>
     </div>
 
-<script src="script.js"></script>
-</body>
+    <script src="js/script.js"></script>
+  </body>
 </html>
