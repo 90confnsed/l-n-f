@@ -6,11 +6,31 @@
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
+    <div id="cursor-spotlight"></div>
     <div id="loading" class="hidden">กำลังโหลดข้อมูล...</div>
 
     <div id="authContainer" class="full-screen">
+      <!-- Particle Background -->
+      <div class="particles">
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+        <span class="particle"></span>
+      </div>
+
       <!-- Login Card -->
       <div id="loginCard" class="login-card">
+        <img
+          src="logo/624064616_1579220146676651_1747012832823948252_n.jpg"
+          alt="Logo"
+          class="site-logo-large"
+        />
         <h2>LOST & FOUND</h2>
         <p>ของใคร ใครก็รัก</p>
         <input
@@ -19,6 +39,27 @@
           placeholder="อีเมล หรือ รหัสนักเรียน"
         />
         <input type="password" id="loginPassword" placeholder="รหัสผ่าน" />
+
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            margin: 10px 0;
+          "
+        >
+          <input
+            type="checkbox"
+            id="rememberMe"
+            style="width: auto; margin-right: 8px"
+          />
+          <label
+            for="rememberMe"
+            style="font-size: 0.9rem; color: #555; cursor: pointer"
+            >จำฉันไว้ในระบบ</label
+          >
+        </div>
+
         <button class="btn-login" onclick="handleLogin()">เข้าสู่ระบบ</button>
         <p style="margin-top: 15px; font-size: 0.9rem">
           ยังไม่มีบัญชี? <a href="#" onclick="showRegister()">ลงทะเบียน</a>
@@ -27,6 +68,11 @@
 
       <!-- Register Card -->
       <div id="registerCard" class="login-card hidden">
+        <img
+          src="logo/624064616_1579220146676651_1747012832823948252_n.jpg"
+          alt="Logo"
+          class="site-logo-large"
+        />
         <h2>ลงทะเบียน</h2>
         <p>สมัคสมาชิกใหม่</p>
         <input type="email" id="regEmail" placeholder="อีเมล (@gmail.com)" />
@@ -70,6 +116,21 @@
           placeholder="เลขประจำตัวนักเรียน"
         />
         <input type="password" id="regPassword" placeholder="ตั้งรหัสผ่าน" />
+        <p
+          style="
+            font-size: 0.75rem;
+            color: #666;
+            margin: -5px 0 10px 0;
+            text-align: left;
+          "
+        >
+          *อักษรภาษาอังกฤษอย่างน้อย 5 ตัว และตัวเลข 1 ตัว
+        </p>
+        <input
+          type="password"
+          id="regConfirmPassword"
+          placeholder="ยืนยันรหัสผ่าน"
+        />
         <button class="btn-primary" onclick="handleRegister()">
           ยืนยันการลงทะเบียน
         </button>
@@ -77,11 +138,48 @@
           มีบัญชีแล้ว? <a href="#" onclick="showLogin()">เข้าสู่ระบบ</a>
         </p>
       </div>
+
+      <!-- Success Card -->
+      <div
+        id="successCard"
+        class="login-card hidden"
+        style="text-align: center"
+      >
+        <h2 style="color: var(--success-color)">ลงทะเบียนสำเร็จ!</h2>
+        <p>นี่คือรหัสรับของของคุณ</p>
+        <div
+          style="
+            background: #fff0f3;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            letter-spacing: 2px;
+            border: 2px dashed var(--accent-color);
+          "
+          id="displayReturnId"
+        >
+          ------
+        </div>
+        <p style="color: #e74c3c; font-weight: bold">
+          โปรดจำไว้ จด หรือ แคปหน้าจอ
+        </p>
+        <button class="btn-primary" onclick="closeSuccessCard()">ตกลง</button>
+      </div>
     </div>
 
     <div id="mainPage" class="main-container hidden">
       <div class="header">
-        <h1 style="margin: 0">LOST & FOUND</h1>
+        <div style="display: flex; align-items: center; gap: 15px">
+          <img
+            src="logo/624064616_1579220146676651_1747012832823948252_n.jpg"
+            alt="Logo"
+            class="site-logo-small"
+          />
+          <h1 style="margin: 0">LOST & FOUND</h1>
+        </div>
         <div>
           <span id="userDisplay" style="margin-right: 15px"></span>
           <button onclick="handleLogout()" style="cursor: pointer">
@@ -93,6 +191,24 @@
       <div class="input-section">
         <input type="text" id="itemName" placeholder="Info (รายละเอียด)" />
         <input type="text" id="itemLocation" placeholder="Place (สถานที่)" />
+        <div class="input-group">
+          <label
+            for="itemFoundTime"
+            style="
+              display: block;
+              font-size: 0.8rem;
+              color: #64748b;
+              margin-bottom: 5px;
+            "
+            >เวลาล่าสุดที่พบ</label
+          >
+          <input
+            type="datetime-local"
+            id="itemFoundTime"
+            title="เวลาล่าสุดที่พบ"
+            style="width: 100%"
+          />
+        </div>
         <input
           type="file"
           id="itemImage"
@@ -102,25 +218,62 @@
             document.getElementById('fileName').innerText = this.files[0].name
           "
         />
-        <button onclick="document.getElementById('itemImage').click()">
-          📸 <span id="fileName">เลือกรูป</span>
-        </button>
-        <button class="btn-save" onclick="saveData()">บันทึกข้อมูล</button>
+        <div class="action-buttons">
+          <button
+            class="btn-upload"
+            onclick="document.getElementById('itemImage').click()"
+          >
+            📸 <span id="fileName">เลือกรูป</span>
+          </button>
+          <button class="btn-save" onclick="saveData()">บันทึกข้อมูล</button>
+        </div>
       </div>
 
       <table>
         <thead>
           <tr>
             <th>วันที่</th>
-            <th>ผู้เก็บได้</th>
+            <th>ผู้ที่แจ้งหาย</th>
             <th>รายละเอียด</th>
-            <th>สถานที่ที่เก็บได้</th>
             <th>รูปภาพ</th>
+            <th>สถานที่ที่เห็นล่าสุด</th>
+            <th>เวลาล่าสุดที่พบ</th>
+            <th>สถานะการคืน</th>
             <th>แก้ไข</th>
           </tr>
         </thead>
         <tbody id="displayArea"></tbody>
       </table>
+    </div>
+
+    <!-- Update Found Info Modal -->
+    <div id="updateModal" class="modal hidden">
+      <div class="modal-content">
+        <h2>อัปเดตข้อมูลที่พบ</h2>
+        <input type="hidden" id="updateLostId" />
+
+        <label>เวลาที่พบ:</label>
+        <input type="datetime-local" id="updateFoundTime" />
+
+        <label>สถานที่ที่พบ:</label>
+        <input type="text" id="updateFoundPlace" placeholder="ระบุสถานที่" />
+
+        <label>สถานะการคืน:</label>
+        <select id="updateFoundStatus">
+          <option value="รอการคืน">รอการคืน</option>
+          <option value="คืนแล้ว">คืนแล้ว</option>
+          <option value="ยังไม่พบ">ยังไม่พบ</option>
+        </select>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px">
+          <button class="btn-primary" onclick="submitFoundUpdate()">
+            บันทึก
+          </button>
+          <button class="btn-secondary" onclick="closeUpdateModal()">
+            ยกเลิก
+          </button>
+        </div>
+      </div>
     </div>
 
     <script src="js/script.js"></script>

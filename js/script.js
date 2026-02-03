@@ -1,5 +1,83 @@
 // Global variables to store user session
 let currentUser = null;
+const API_URL = "https://script.google.com/macros/s/AKfycbzBolUcFz1APeymizFfYTprGGzzNPQMtxt8psc48m_u3E8n1llswMXdb_NEbluBct0T/exec";
+
+async function callApi(action, payload) {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: action, payload: payload })
+        });
+        const data = await response.json();
+        return data; 
+    } catch (error) {
+        console.error("API Error:", error);
+        throw error;
+    }
+}
+
+// Auto Login on Load
+window.onload = function() {
+    const savedUser = localStorage.getItem("currentUser");
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        document.getElementById('authContainer').classList.add('hidden');
+        document.getElementById('mainPage').classList.remove('hidden');
+        document.getElementById('userDisplay').innerText = "สวัสดี, " + currentUser.name;
+        loadItems();
+    }
+    
+    // Initialize cursor effects
+    initCursorEffects();
+};
+
+// Cursor Interaction Effects
+function initCursorEffects() {
+    const spotlight = document.getElementById('cursor-spotlight');
+    const particles = document.querySelectorAll('.particle');
+    let mouseX = 0;
+    let mouseY = 0;
+    
+    // Track mouse movement
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        
+        // Update spotlight position
+        spotlight.style.left = mouseX + 'px';
+        spotlight.style.top = mouseY + 'px';
+        spotlight.style.opacity = '1';
+        
+        // Make particles react to cursor
+        particles.forEach(particle => {
+            const rect = particle.getBoundingClientRect();
+            const particleX = rect.left + rect.width / 2;
+            const particleY = rect.top + rect.height / 2;
+            
+            const distance = Math.sqrt(
+                Math.pow(mouseX - particleX, 2) + 
+                Math.pow(mouseY - particleY, 2)
+            );
+            
+            // Push particles away from cursor
+            if (distance < 150) {
+                const angle = Math.atan2(particleY - mouseY, particleX - mouseX);
+                const force = (150 - distance) / 5;
+                const offsetX = Math.cos(angle) * force;
+                const offsetY = Math.sin(angle) * force;
+                
+                particle.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${1 + force / 50})`;
+            } else {
+                particle.style.transform = '';
+            }
+        });
+    });
+    
+    // Hide spotlight when mouse leaves window
+    document.addEventListener('mouseleave', () => {
+        spotlight.style.opacity = '0';
+    });
+}
 
 // UI Toggles
 function showRegister() {
@@ -9,7 +87,13 @@ function showRegister() {
 
 function showLogin() {
     document.getElementById('registerCard').classList.add('hidden');
+    document.getElementById('successCard').classList.add('hidden'); // Ensure success card is hidden
     document.getElementById('loginCard').classList.remove('hidden');
+}
+
+function closeSuccessCard() {
+    document.getElementById('successCard').classList.add('hidden');
+    showLogin();
 }
 
 function toggleLoading(show) {
@@ -40,6 +124,15 @@ function handleRegister() {
         return;
     }
 
+    // Password validation: at least 5 English characters and 1 number
+    const engCharCount = (password.match(/[a-zA-Z]/g) || []).length;
+    const hasNumber = /[0-9]/.test(password);
+
+    if (engCharCount < 5 || !hasNumber) {
+        alert("รหัสผ่านต้องมีตัวอักษรภาษาอังกฤษอย่างน้อย 5 ตัว และตัวเลขอย่างน้อย 1 ตัว");
+        return;
+    }
+
     if (!email.endsWith("@gmail.com")) {
         alert("กรุณาใช้อีเมล @gmail.com เท่านั้น");
         return;
@@ -57,18 +150,20 @@ function handleRegister() {
     };
 
     toggleLoading(true);
-    google.script.run.withSuccessHandler(function(returnId) {
+    callApi("registerUser", data).then(returnId => {
         toggleLoading(false);
         if (returnId === "DUPLICATE") {
             alert("อีเมล หรือ รหัสนักเรียนนี้ ลงทะเบียนไปแล้ว");
         } else {
-            alert("ลงทะเบียนสำเร็จ! \nรหัสรับของคืนของคุณคือ: " + returnId + "\nจำรหัสนี้ไว้เพื่อรับของคืน");
-            showLogin();
+            // Updated to show Success Card instead of Alert
+            document.getElementById('registerCard').classList.add('hidden');
+            document.getElementById('successCard').classList.remove('hidden');
+            document.getElementById('displayReturnId').innerText = returnId;
         }
-    }).withFailureHandler(function(error) {
+    }).catch(error => {
         toggleLoading(false);
         alert("เกิดข้อผิดพลาด: " + error);
-    }).registerUser(data);
+    });
 }
 
 // Login Logic
@@ -82,25 +177,33 @@ function handleLogin() {
     }
 
     toggleLoading(true);
-    google.script.run.withSuccessHandler(function(response) {
+    callApi("loginUser", { input: loginInput, password: password }).then(response => {
         toggleLoading(false);
         if (response.success) {
             currentUser = response.user;
             document.getElementById('authContainer').classList.add('hidden');
             document.getElementById('mainPage').classList.remove('hidden');
             document.getElementById('userDisplay').innerText = "สวัสดี, " + currentUser.name;
+            
+            // Check Remember Me
+            const rememberMe = document.getElementById('rememberMe').checked;
+            if (rememberMe) {
+                localStorage.setItem("currentUser", JSON.stringify(currentUser));
+            }
+            
             loadItems(); // Load lost items
         } else {
             alert("เข้าสู่ระบบไม่สำเร็จ: " + response.message);
         }
-    }).withFailureHandler(function(error) {
+    }).catch(error => {
         toggleLoading(false);
         alert("เกิดข้อผิดพลาด: " + error);
-    }).loginUser(loginInput, password);
+    });
 }
 
 function handleLogout() {
     currentUser = null;
+    localStorage.removeItem("currentUser");
     document.getElementById('mainPage').classList.add('hidden');
     document.getElementById('authContainer').classList.remove('hidden');
     // Clear inputs
@@ -114,8 +217,12 @@ function saveData() {
     
     const info = document.getElementById('itemName').value;
     const place = document.getElementById('itemLocation').value;
+    const foundTime = document.getElementById('itemFoundTime').value;
     const fileInput = document.getElementById('itemImage');
     const file = fileInput.files[0];
+    
+    // Construct owner name
+    const ownerName = currentUser.name + " " + currentUser.surname;
 
     if (!info || !place) {
         alert("กรุณากรอกรายละเอียดและสถานที่");
@@ -132,10 +239,12 @@ function saveData() {
             const obj = {
                 info: info,
                 place: place,
+                foundTime: foundTime ? new Date(foundTime).toLocaleString('th-TH') : '',
                 fileName: file.name,
                 mimeType: file.type,
                 base64: base64,
-                reporter: currentUser.name // Save who reported
+                owner_name: ownerName,
+                userId: currentUser.userId
             };
             sendDataToBackend(obj);
         };
@@ -144,58 +253,136 @@ function saveData() {
         const obj = {
             info: info,
             place: place,
-            reporter: currentUser.name
+            foundTime: foundTime ? new Date(foundTime).toLocaleString('th-TH') : '',
+            owner_name: ownerName,
+            userId: currentUser.userId
         };
         sendDataToBackend(obj);
     }
 }
 
 function sendDataToBackend(obj) {
-    google.script.run.withSuccessHandler(function() {
+    callApi("saveData", obj).then(() => {
         toggleLoading(false);
         alert("บันทึกข้อมูลเรียบร้อย");
         document.getElementById('itemName').value = "";
         document.getElementById('itemLocation').value = "";
+        document.getElementById('itemFoundTime').value = "";
         document.getElementById('fileName').innerText = "เลือกรูป";
         loadItems();
-    }).withFailureHandler(function(e) {
+    }).catch(e => {
         toggleLoading(false);
         alert("Error: " + e);
-    }).saveData(obj);
+    });
 }
 
 function loadItems() {
     toggleLoading(true);
-    google.script.run.withSuccessHandler(function(dataString) {
+    callApi("getAllData", {}).then(data => {
         toggleLoading(false);
         const tbody = document.getElementById('displayArea');
         tbody.innerHTML = "";
         
-        // dataString should be JSON string
-        const data = JSON.parse(dataString); 
+        // data is already an object (array) because callApi parses JSON
         
         // Reverse to show newest first
-        data.reverse().forEach(row => {
-            // [Timestamp, Reporter, Info, Place, ImageURL, FoundStatus, ID]
-            // Assuming row structure matches backend
-            const tr = document.createElement('tr');
-            
-            // Format Date
-            const date = new Date(row[0]).toLocaleDateString('th-TH');
-            
-            let imgHtml = row[4] ? `<img src="${row[4]}" class="thumb-img">` : "-";
-            
-            tr.innerHTML = `
-                <td>${date}</td>
-                <td>${row[1]}</td> <!-- User who found/reported -->
-                <td>${row[2]}</td>
-                <td>${row[3]}</td>
-                <td>${imgHtml}</td>
-                <td>
-                    <button onclick="markFound('${row[6]}')">รับคืนแล้ว</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }).getAllData();
+        if (Array.isArray(data)) {
+            data.reverse().forEach(row => {
+                // Backend Columns: 
+                // 0: lost_id, 1: timestamp, 2: owner_name, 3: info, 4: place, 
+                // 5: pic, 6: User_id, 7: Last_time_found, 8: found_status
+                
+                const tr = document.createElement('tr');
+                
+                // Format Date
+                const date = new Date(row[1]).toLocaleDateString('th-TH');
+                
+                let imgHtml = row[5] ? `<img src="${row[5]}" class="thumb-img">` : "-";
+                
+                tr.innerHTML = `
+                    <td>${date}</td>
+                    <td>${row[2]}</td> <!-- User who reported -->
+                    <td>${row[3]}</td> <!-- Info -->
+                    <td>${imgHtml}</td> <!-- Image -->
+                    <td>${row[4]}</td> <!-- Place -->
+                    <td>${row[7] || '-'}</td> <!-- Last Time Found -->
+                    <td>${row[8]}</td> <!-- Status -->
+                    <td>
+                        <button onclick="openUpdateModal('${row[0]}', '${row[7] || ''}', '${row[4]}', '${row[8]}')" 
+                                style="padding: 6px 12px; background: var(--accent-color); color: white; border: none; border-radius: 8px; cursor: pointer;">
+                            อัปเดต
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    }).catch(err => {
+         toggleLoading(false);
+         console.error(err);
+    });
+}
+
+// Modal Functions for Update Found Info
+function openUpdateModal(lostId, foundTime, foundPlace, foundStatus) {
+    document.getElementById('updateLostId').value = lostId;
+    document.getElementById('updateFoundPlace').value = foundPlace;
+    document.getElementById('updateFoundStatus').value = foundStatus;
+    
+    // Convert foundTime to datetime-local format if it exists
+    if (foundTime && foundTime !== '-') {
+        const date = new Date(foundTime);
+        if (!isNaN(date.getTime())) {
+            // Format as YYYY-MM-DDTHH:mm for datetime-local input
+            const formattedDate = date.toISOString().slice(0, 16);
+            document.getElementById('updateFoundTime').value = formattedDate;
+        }
+    } else {
+        document.getElementById('updateFoundTime').value = '';
+    }
+    
+    document.getElementById('updateModal').classList.remove('hidden');
+}
+
+function closeUpdateModal() {
+    document.getElementById('updateModal').classList.add('hidden');
+    // Clear inputs
+    document.getElementById('updateLostId').value = '';
+    document.getElementById('updateFoundTime').value = '';
+    document.getElementById('updateFoundPlace').value = '';
+}
+
+function submitFoundUpdate() {
+    const lostId = document.getElementById('updateLostId').value;
+    const foundTime = document.getElementById('updateFoundTime').value;
+    const foundPlace = document.getElementById('updateFoundPlace').value;
+    const foundStatus = document.getElementById('updateFoundStatus').value;
+    
+    if (!foundStatus) {
+        alert('กรุณาเลือกสถานะการคืน');
+        return;
+    }
+    
+    toggleLoading(true);
+    
+    const data = {
+        lostId: lostId,
+        foundTime: foundTime ? new Date(foundTime).toLocaleString('th-TH') : '',
+        foundPlace: foundPlace,
+        foundStatus: foundStatus
+    };
+    
+    callApi('updateFoundInfo', data).then(response => {
+        toggleLoading(false);
+        if (response.success) {
+            alert('อัปเดตข้อมูลสำเร็จ');
+            closeUpdateModal();
+            loadItems(); // Refresh table
+        } else {
+            alert('เกิดข้อผิดพลาด: ' + (response.message || 'ไม่สามารถอัปเดตได้'));
+        }
+    }).catch(error => {
+        toggleLoading(false);
+        alert('เกิดข้อผิดพลาด: ' + error);
+    });
 }
