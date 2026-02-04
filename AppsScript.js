@@ -144,8 +144,8 @@ function saveData(obj) {
     const folder = getFolder("LostAndFoundImages");
     const blob = Utilities.newBlob(Utilities.base64Decode(obj.base64), obj.mimeType, obj.fileName);
     const file = folder.createFile(blob);
-    file.setSharing(SpreadsheetApp.Access.ANYONE_WITH_LINK, SpreadsheetApp.Permission.VIEW);
-    imageUrl = "https://drive.google.com/uc?export=view&id=" + file.getId();
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    imageUrl = "https://drive.google.com/thumbnail?id=" + file.getId() + "&sz=w1000";
   }
   
   const lostId = Utilities.getUuid();
@@ -159,7 +159,7 @@ function saveData(obj) {
     imageUrl,
     obj.userId,
     obj.foundTime || "", // Last_time_found
-    "รอการคืน" // found_status (default)
+    "ยังไม่พบ" // found_status (default: Not Found)
   ]);
   return true;
 }

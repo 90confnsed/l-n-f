@@ -262,8 +262,11 @@ function saveData() {
 }
 
 function sendDataToBackend(obj) {
-    callApi("saveData", obj).then(() => {
+    callApi("saveData", obj).then(response => {
         toggleLoading(false);
+        if (response && response.error) {
+             throw new Error(response.error);
+        }
         alert("บันทึกข้อมูลเรียบร้อย");
         document.getElementById('itemName').value = "";
         document.getElementById('itemLocation').value = "";
@@ -280,8 +283,8 @@ function loadItems() {
     toggleLoading(true);
     callApi("getAllData", {}).then(data => {
         toggleLoading(false);
-        const tbody = document.getElementById('displayArea');
-        tbody.innerHTML = "";
+        const grid = document.getElementById('itemGrid');
+        grid.innerHTML = "";
         
         // data is already an object (array) because callApi parses JSON
         
@@ -292,29 +295,55 @@ function loadItems() {
                 // 0: lost_id, 1: timestamp, 2: owner_name, 3: info, 4: place, 
                 // 5: pic, 6: User_id, 7: Last_time_found, 8: found_status
                 
-                const tr = document.createElement('tr');
+                const card = document.createElement('div');
+                card.className = 'item-card';
                 
                 // Format Date
-                const date = new Date(row[1]).toLocaleDateString('th-TH');
+                const date = new Date(row[1]).toLocaleDateString('th-TH', {
+                    year: '2-digit', month: 'short', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                });
                 
-                let imgHtml = row[5] ? `<img src="${row[5]}" class="thumb-img">` : "-";
-                
-                tr.innerHTML = `
-                    <td>${date}</td>
-                    <td>${row[2]}</td> <!-- User who reported -->
-                    <td>${row[3]}</td> <!-- Info -->
-                    <td>${imgHtml}</td> <!-- Image -->
-                    <td>${row[4]}</td> <!-- Place -->
-                    <td>${row[7] || '-'}</td> <!-- Last Time Found -->
-                    <td>${row[8]}</td> <!-- Status -->
-                    <td>
-                        <button onclick="openUpdateModal('${row[0]}', '${row[7] || ''}', '${row[4]}', '${row[8]}')" 
-                                style="padding: 6px 12px; background: var(--accent-color); color: white; border: none; border-radius: 8px; cursor: pointer;">
-                            อัปเดต
+                // Image handling
+                let imgHtml = row[5] 
+                    ? `<img src="${row[5]}" class="card-img" referrerpolicy="no-referrer" loading="lazy" onclick="openImageModal('${row[5]}')">` 
+                    : `<div class="card-no-img"><span>No Image</span></div>`;
+
+                // Status Badge Color & Text
+                let statusClass = 'status-lost'; // Default Red
+                let statusText = row[8] === 'F' ? 'ยังไม่พบ' : row[8];
+
+                if (statusText === 'คืนแล้ว') {
+                    statusClass = 'status-returned';
+                } else if (statusText === 'รอการคืน') {
+                    statusClass = 'status-pending';
+                } else if (statusText === 'ยังไม่พบ') {
+                    statusClass = 'status-lost';
+                }
+
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span class="card-date">${date}</span>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="card-image-container">
+                        ${imgHtml}
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">${row[3]}</h3>
+                        <div class="card-info">
+                            <p><strong>สถานที่ล่าสุด/ทำหาย:</strong> ${row[4]}</p>
+                            <p><strong>ผู้แจ้ง:</strong> ${row[2]}</p>
+                            <p><strong>เวลาที่เห็นล่าสุด:</strong> ${row[7] || '-'}</p>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn-card-action" onclick="openUpdateModal('${row[0]}', '${row[7] || ''}', '${row[4]}', '${row[8]}')">
+                            อัปเดตสถานะ
                         </button>
-                    </td>
+                    </div>
                 `;
-                tbody.appendChild(tr);
+                grid.appendChild(card);
             });
         }
     }).catch(err => {
@@ -385,4 +414,16 @@ function submitFoundUpdate() {
         toggleLoading(false);
         alert('เกิดข้อผิดพลาด: ' + error);
     });
+}
+
+// Image Modal Functions
+function openImageModal(src) {
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('fullImage');
+    modal.classList.remove('hidden');
+    modalImg.src = src;
+}
+
+function closeImageModal() {
+    document.getElementById('imageModal').classList.add('hidden');
 }

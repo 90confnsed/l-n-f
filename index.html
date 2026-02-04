@@ -190,7 +190,11 @@
 
       <div class="input-section">
         <input type="text" id="itemName" placeholder="Info (รายละเอียด)" />
-        <input type="text" id="itemLocation" placeholder="Place (สถานที่)" />
+        <input
+          type="text"
+          id="itemLocation"
+          placeholder="Place (สถานที่ที่เห็นล่าสุด / ทำหาย)"
+        />
         <div class="input-group">
           <label
             for="itemFoundTime"
@@ -200,12 +204,12 @@
               color: #64748b;
               margin-bottom: 5px;
             "
-            >เวลาล่าสุดที่พบ</label
+            >เวลาที่เห็นล่าสุด</label
           >
           <input
             type="datetime-local"
             id="itemFoundTime"
-            title="เวลาล่าสุดที่พบ"
+            title="เวลาที่เห็นล่าสุด"
             style="width: 100%"
           />
         </div>
@@ -229,21 +233,10 @@
         </div>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>วันที่</th>
-            <th>ผู้ที่แจ้งหาย</th>
-            <th>รายละเอียด</th>
-            <th>รูปภาพ</th>
-            <th>สถานที่ที่เห็นล่าสุด</th>
-            <th>เวลาล่าสุดที่พบ</th>
-            <th>สถานะการคืน</th>
-            <th>แก้ไข</th>
-          </tr>
-        </thead>
-        <tbody id="displayArea"></tbody>
-      </table>
+      <!-- New Grid Layout -->
+      <div id="itemGrid" class="item-grid"></div>
+
+      <!-- Old Table Removed -->
     </div>
 
     <!-- Update Found Info Modal -->
@@ -274,6 +267,12 @@
           </button>
         </div>
       </div>
+    </div>
+
+    <!-- Full Image Modal -->
+    <div id="imageModal" class="modal hidden" onclick="closeImageModal()">
+      <span class="close-modal">&times;</span>
+      <img class="modal-content-img" id="fullImage" />
     </div>
 
     <script src="js/script.js"></script>
