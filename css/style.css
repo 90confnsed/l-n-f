@@ -1,9 +1,13 @@
 /* --- Modern CSS Upgrade --- */
 :root {
-  --primary-color: #6366f1; /* Indigo */
-  --accent-color: #8b5cf6; /* Violet */
-  --success-color: #10b981; /* Emerald */
-  --danger-color: #ef4444; /* Red */
+  --primary-color: #6366f1;
+  /* Indigo */
+  --accent-color: #8b5cf6;
+  /* Violet */
+  --success-color: #10b981;
+  /* Emerald */
+  --danger-color: #ef4444;
+  /* Red */
   --bg-gradient: linear-gradient(135deg, #fce4ec 0%, #f3e8ff 100%);
   --card-bg: #ffffff;
   --text-primary: #1e293b;
@@ -29,12 +33,10 @@ body {
   position: fixed;
   width: 400px;
   height: 400px;
-  background: radial-gradient(
-    circle,
-    rgba(255, 133, 161, 0.4) 0%,
-    rgba(139, 92, 246, 0.2) 30%,
-    transparent 70%
-  );
+  background: radial-gradient(circle,
+      rgba(255, 133, 161, 0.4) 0%,
+      rgba(139, 92, 246, 0.2) 30%,
+      transparent 70%);
   border-radius: 50%;
   pointer-events: none;
   transform: translate(-50%, -50%);
@@ -56,12 +58,14 @@ body {
 }
 
 @keyframes logoPulse {
+
   0%,
   100% {
     box-shadow:
       0 4px 10px rgba(0, 0, 0, 0.1),
       0 0 20px rgba(139, 92, 246, 0.3);
   }
+
   50% {
     box-shadow:
       0 4px 15px rgba(0, 0, 0, 0.15),
@@ -111,10 +115,12 @@ body {
 }
 
 @keyframes cardFloat {
+
   0%,
   100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-10px);
   }
@@ -167,10 +173,12 @@ body {
 }
 
 @keyframes gradientMove {
+
   0%,
   100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
@@ -199,6 +207,7 @@ a {
   text-decoration: none;
   font-weight: bold;
 }
+
 a:hover {
   text-decoration: underline;
 }
@@ -223,6 +232,7 @@ a:hover {
   align-items: center;
   border-bottom: 1px solid #eee;
 }
+
 .header h1 {
   margin: 0;
   font-size: 1.8rem;
@@ -238,7 +248,8 @@ a:hover {
   background: #f8fafc;
   flex-wrap: wrap;
   border-bottom: 1px solid #eee;
-  align-items: flex-end; /* Align items to bottom to handle labels */
+  align-items: flex-end;
+  /* Align items to bottom to handle labels */
 }
 
 .input-section input {
@@ -250,15 +261,18 @@ a:hover {
   min-width: 200px;
   transition: 0.3s;
 }
+
 .input-section .input-group {
   flex: 1;
   min-width: 200px;
   display: flex;
   flex-direction: column;
 }
+
 .input-section .input-group input {
   width: 100%;
 }
+
 .input-section input:focus {
   border-color: var(--accent-color);
   outline: none;
@@ -281,6 +295,7 @@ button {
   transition: all 0.3s ease;
   animation: pulse 2s ease-in-out infinite;
 }
+
 .btn-save:hover {
   background: #27ae60;
   transform: translateY(-2px) scale(1.05);
@@ -288,10 +303,12 @@ button {
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     box-shadow: 0 4px 6px rgba(46, 204, 113, 0.2);
   }
+
   50% {
     box-shadow:
       0 4px 6px rgba(46, 204, 113, 0.2),
@@ -314,8 +331,10 @@ button {
   padding: 11px 25px;
   border-radius: 10px;
   transition: all 0.3s ease;
-  white-space: nowrap; /* Prevent text wrapping */
+  white-space: nowrap;
+  /* Prevent text wrapping */
 }
+
 .btn-upload:hover {
   background: #fff0f3;
   border-style: solid;
@@ -332,6 +351,7 @@ button[onclick="handleLogout()"] {
   font-weight: 500;
   transition: all 0.3s ease;
 }
+
 button[onclick="handleLogout()"]:hover {
   background: var(--danger-color);
   color: white;
@@ -441,13 +461,11 @@ button[onclick="handleLogout()"]:hover {
   align-items: center;
   color: #cbd5e1;
   font-weight: 500;
-  background: repeating-linear-gradient(
-    45deg,
-    #f8fafc,
-    #f8fafc 10px,
-    #f1f5f9 10px,
-    #f1f5f9 20px
-  );
+  background: repeating-linear-gradient(45deg,
+      #f8fafc,
+      #f8fafc 10px,
+      #f1f5f9 10px,
+      #f1f5f9 20px);
 }
 
 .card-body {
@@ -509,6 +527,7 @@ button[onclick="handleLogout()"]:hover {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s;
 }
+
 .thumb-img:hover {
   transform: scale(1.5);
   z-index: 10;
@@ -541,15 +560,18 @@ button[onclick="handleLogout()"]:hover {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
+
 @keyframes fadeIn {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -559,9 +581,11 @@ button[onclick="handleLogout()"]:hover {
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
@@ -579,11 +603,9 @@ button[onclick="handleLogout()"]:hover {
 
 .particle {
   position: absolute;
-  background: radial-gradient(
-    circle,
-    rgba(255, 133, 161, 0.6),
-    rgba(139, 92, 246, 0.3)
-  );
+  background: radial-gradient(circle,
+      rgba(255, 133, 161, 0.6),
+      rgba(139, 92, 246, 0.3));
   border-radius: 50%;
   animation: float 15s infinite ease-in-out;
   transition: transform 0.3s ease-out;
@@ -674,12 +696,15 @@ button[onclick="handleLogout()"]:hover {
     transform: translateY(100vh) rotate(0deg);
     opacity: 0;
   }
+
   10% {
     opacity: 0.6;
   }
+
   90% {
     opacity: 0.6;
   }
+
   100% {
     transform: translateY(-100px) rotate(360deg);
     opacity: 0;
@@ -799,7 +824,127 @@ button[onclick="handleLogout()"]:hover {
   from {
     transform: scale(0);
   }
+
   to {
     transform: scale(1);
+  }
+}
+
+/* Item Card Image */
+.item-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.item-image:hover {
+  transform: scale(1.05);
+}
+
+/* No Image Placeholder */
+.no-image {
+  width: 100%;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: repeating-linear-gradient(45deg,
+      #f8fafc,
+      #f8fafc 10px,
+      #f1f5f9 10px,
+      #f1f5f9 20px);
+  color: #cbd5e1;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* Item Details Section */
+.item-details {
+  padding: 20px;
+}
+
+.item-details h3 {
+  margin: 0 0 15px 0;
+  color: var(--primary-color);
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.item-details p {
+  margin: 8px 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.item-details strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Update Button in Card */
+.btn-update {
+  width: 100%;
+  margin-top: 15px;
+  padding: 10px;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-update:hover {
+  background: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+/* Additional Status Badge Styles */
+.status-ยังไม่พบ {
+  background-color: #fef2f2;
+  color: var(--danger-color);
+  border: 1px solid #fecaca;
+}
+
+.status-รอการคืน {
+  background-color: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+
+.status-คืนแล้ว {
+  background-color: #ecfdf5;
+  color: var(--success-color);
+  border: 1px solid #a7f3d0;
+}
+
+/* Admin Badge */
+.admin-badge {
+  display: inline-block;
+  background: linear-gradient(45deg, #ff6b6b, #ee5a6f);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-left: 10px;
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.4);
+  animation: adminPulse 2s ease-in-out infinite;
+  vertical-align: middle;
+}
+
+@keyframes adminPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.4), 0 0 20px rgba(255, 107, 107, 0.6);
   }
 }

@@ -52,14 +52,14 @@ function include(filename) {
 function registerUser(data) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = ss.getSheetByName(WAIT_SHEET_NAME);
-  
+
   if (!sheet) {
     sheet = ss.insertSheet(WAIT_SHEET_NAME);
     sheet.appendRow(["User_id", "e-mail", "ชื่อ", "นามสกุล", "ชั้น", "ห้อง", "เลขที่", "student_id", "password", "return_id"]);
   }
 
   const values = sheet.getDataRange().getValues();
-  
+
   // Check for duplicate Email or Student ID in the wait list
   // New Indices: 1=Email, 7=Student ID
   for (let i = 1; i < values.length; i++) {
@@ -81,7 +81,7 @@ function registerUser(data) {
 
   const returnId = generateReturnId();
   const userId = Math.floor(10000000 + Math.random() * 90000000).toString(); // Random 8-digit User ID
-  
+
   sheet.appendRow([
     userId,
     data.email,
@@ -107,9 +107,29 @@ function loginUser(input, password) {
   // For now, let's assume login only works for confirmed users in "Users" sheet
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const mainSheet = ss.getSheetByName("Users");
-  
+
+  // Admin credentials
+  const ADMIN_STUDENT_ID = "10101010";
+  const ADMIN_PASSWORD = "nimda_1111";
+
+  // Check if this is admin login
+  if (input === ADMIN_STUDENT_ID && password === ADMIN_PASSWORD) {
+    return {
+      success: true,
+      user: {
+        userId: "ADMIN",
+        email: "admin@system",
+        name: "Admin",
+        surname: "System",
+        studentId: ADMIN_STUDENT_ID,
+        returnId: "000000",
+        isAdmin: true
+      }
+    };
+  }
+
   if (!mainSheet) return { success: false, message: "ไม่พบข้อมูลผู้ใช้ (หรือยังไม่ได้รับการยืนยัน)" };
-  
+
   const values = mainSheet.getDataRange().getValues();
   for (let i = 1; i < values.length; i++) {
     // Indices: 1: Email, 7: Student ID, 8: Password
@@ -122,12 +142,13 @@ function loginUser(input, password) {
           name: values[i][2],
           surname: values[i][3],
           studentId: values[i][7],
-          returnId: values[i][9] // return_id
+          returnId: values[i][9], // return_id
+          isAdmin: false
         }
       };
     }
   }
-  
+
   return { success: false, message: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" };
 }
 
@@ -138,7 +159,7 @@ function saveData(obj) {
     sheet = ss.insertSheet("lost_item");
     sheet.appendRow(["lost_id", "timestamp", "owner_name", "info", "place", "pic", "User_id", "Last_time_found", "found_status"]);
   }
-  
+
   let imageUrl = "";
   if (obj.base64) {
     const folder = getFolder("LostAndFoundImages");
@@ -147,7 +168,7 @@ function saveData(obj) {
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     imageUrl = "https://drive.google.com/thumbnail?id=" + file.getId() + "&sz=w1000";
   }
-  
+
   const lostId = Utilities.getUuid();
   // Columns: lost_id, timestamp, owner_name, info, place, pic, User_id, Last_time_found, found_status
   sheet.appendRow([
@@ -159,7 +180,7 @@ function saveData(obj) {
     imageUrl,
     obj.userId,
     obj.foundTime || "", // Last_time_found
-    "ยังไม่พบ" // found_status (default: Not Found)
+    obj.reportType || "ยังไม่พบ" // found_status (use reportType from frontend, default: Not Found)
   ]);
   return true;
 }
@@ -185,13 +206,13 @@ function getFolder(folderName) {
 function updateFoundInfo(data) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName("lost_item");
-  
+
   if (!sheet) {
     return { success: false, message: "ไม่พบข้อมูล" };
   }
-  
+
   const values = sheet.getDataRange().getValues();
-  
+
   // Find row by lost_id (column 0)
   for (let i = 1; i < values.length; i++) {
     if (values[i][0] === data.lostId) {
@@ -199,10 +220,10 @@ function updateFoundInfo(data) {
       sheet.getRange(i + 1, 8).setValue(data.foundTime || ""); // Last_time_found
       sheet.getRange(i + 1, 5).setValue(data.foundPlace || values[i][4]); // place (if provided, otherwise keep original)
       sheet.getRange(i + 1, 9).setValue(data.foundStatus); // found_status
-      
+
       return { success: true };
     }
   }
-  
+
   return { success: false, message: "ไม่พบรายการที่ต้องการอัปเดต" };
 }
