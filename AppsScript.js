@@ -30,6 +30,12 @@ function doPost(e) {
       result = JSON.parse(jsonStr);
     } else if (action === "updateFoundInfo") {
       result = updateFoundInfo(data.payload);
+    } else if (action === "requestReturn") {
+      result = requestReturn(data.payload);
+    } else if (action === "confirmReturn") {
+      result = confirmReturn(data.payload);
+    } else if (action === "cancelReturn") {
+      result = cancelReturn(data.payload);
     } else {
       result = { error: "Invalid action" };
     }
@@ -215,7 +221,7 @@ function updateFoundInfo(data) {
 
   // Find row by lost_id (column 0)
   for (let i = 1; i < values.length; i++) {
-    if (values[i][0] === data.lostId) {
+    if (String(values[i][0]) === String(data.lostId)) {
       // Update: Column 7 = Last_time_found, Column 4 = place, Column 8 = found_status
       sheet.getRange(i + 1, 8).setValue(data.foundTime || ""); // Last_time_found
       sheet.getRange(i + 1, 5).setValue(data.foundPlace || values[i][4]); // place (if provided, otherwise keep original)
@@ -226,4 +232,65 @@ function updateFoundInfo(data) {
   }
 
   return { success: false, message: "ไม่พบรายการที่ต้องการอัปเดต" };
+}
+
+function requestReturn(data) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName("lost_item");
+  
+  if (!sheet) {
+    return { success: false, message: "ไม่พบข้อมูล" };
+  }
+
+  const values = sheet.getDataRange().getValues();
+  // data: { lostId, userId }
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(data.lostId)) {
+      // Check ownership (Column 6 is User_id)
+      if (String(values[i][6]) !== String(data.userId)) {
+         return { success: false, message: "ไม่ใช่เจ้าของรายการ" };
+      }
+      
+      // Update status to "กำลังยืนยัน" (Using standard Thai string)
+      sheet.getRange(i + 1, 9).setValue("กำลังยืนยัน");
+      return { success: true };
+    }
+  }
+  return { success: false, message: "ไม่พบรายการ" };
+}
+
+function confirmReturn(data) {
+   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+   const sheet = ss.getSheetByName("lost_item");
+   
+   if (!sheet) {
+     return { success: false, message: "ไม่พบข้อมูล" };
+   }
+
+   const values = sheet.getDataRange().getValues();
+   for (let i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(data.lostId)) {
+      sheet.getRange(i + 1, 9).setValue("คืนแล้ว");
+      return { success: true };
+    }
+   }
+   return { success: false, message: "ไม่พบรายการ" };
+}
+
+function cancelReturn(data) {
+   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+   const sheet = ss.getSheetByName("lost_item");
+   
+   if (!sheet) {
+     return { success: false, message: "ไม่พบข้อมูล" };
+   }
+
+   const values = sheet.getDataRange().getValues();
+   for (let i = 1; i < values.length; i++) {
+    if (String(values[i][0]) === String(data.lostId)) {
+      sheet.getRange(i + 1, 9).setValue("รอการคืน");
+      return { success: true };
+    }
+   }
+   return { success: false, message: "ไม่พบรายการ" };
 }

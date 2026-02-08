@@ -375,12 +375,15 @@ function sendDataToBackend(obj) {
     });
 }
 
-function loadItems() {
-    toggleLoading(true);
+function loadItems(silent = false) {
+    if (!silent) toggleLoading(true);
     callApi("getAllData", {}).then(data => {
-        toggleLoading(false);
+        if (!silent) toggleLoading(false);
         const itemGrid = document.getElementById('itemGrid');
         itemGrid.innerHTML = "";
+        
+        // Polling check for Admin
+        let itemsToVerify = [];
 
         // data is already an object (array) because callApi parses JSON
 
@@ -407,6 +410,17 @@ function loadItems() {
                     </button>
                 ` : '';
 
+                // Request Return Button (User only)
+                let requestReturnBtn = '';
+                if (currentUser && !currentUser.isAdmin && row[8] === 'รอการคืน' && String(row[6]) === String(currentUser.userId)) {
+                    requestReturnBtn = `<button onclick="openReturnModal('${row[0]}')" class="btn-primary" style="margin-top: 10px; width: 100%;">ขอรับคืน</button>`;
+                }
+                
+                // Collect verification items for Admin
+                if (row[8] === 'กำลังยืนยัน') {
+                    itemsToVerify.push(row);
+                }
+
                 card.innerHTML = `
                     ${imgHtml}
                     <div class="item-details">
@@ -417,10 +431,16 @@ function loadItems() {
                         <p><strong>เห็นล่าสุด:</strong> ${row[7] || '-'}</p>
                         <p><strong>สถานะ:</strong> <span class="status-badge status-${row[8].replace(/\s+/g, '-')}">${row[8]}</span></p>
                         ${updateButton}
+                        ${requestReturnBtn}
                     </div>
                 `;
                 itemGrid.appendChild(card);
             });
+            
+            // Trigger Admin Verification Alert
+            if (currentUser && currentUser.isAdmin && itemsToVerify.length > 0) {
+                 checkAdminPendingRequests(itemsToVerify);
+            }
         }
     }).catch(err => {
         toggleLoading(false);
@@ -525,3 +545,204 @@ function closeImageModal() {
     modal.classList.add('hidden');
 }
 
+
+// Return Flow Functions
+
+let currentReturnLostId = null;
+let isVerifying = false;
+let countdownInterval;
+let pollingInterval;
+
+function openReturnModal(lostId) {
+    currentReturnLostId = lostId;
+    document.getElementById('returnModal').classList.remove('hidden');
+    document.getElementById('returnIdInput').value = '';
+    document.getElementById('returnIdInput').focus();
+}
+
+function closeReturnModal() {
+    document.getElementById('returnModal').classList.add('hidden');
+    currentReturnLostId = null;
+}
+
+function submitReturnRequest() {
+    const inputCode = document.getElementById('returnIdInput').value.trim();
+    if (!inputCode) return;
+    
+    // Convert both to string to ensure matching works even if one is number
+    if (String(inputCode) !== String(currentUser.returnId)) {
+        console.log("Input:", inputCode, "Expected:", currentUser.returnId); // Debugging
+        Swal.fire({
+            icon: 'error',
+            title: 'รหัสไม่ถูกต้อง',
+            text: 'กรุณาตรวจสอบรหัสรับคืนของคุณอีกครั้ง',
+            confirmButtonText: 'ตกลง'
+        });
+        return;
+    }
+    
+    // Valid code, send request
+    toggleLoading(true);
+    callApi('requestReturn', { lostId: currentReturnLostId, userId: currentUser.userId }).then(res => {
+        toggleLoading(false);
+        if (res.success) {
+            closeReturnModal();
+            startCountdown(currentReturnLostId);
+        } else {
+             Swal.fire('Error', res.message, 'error');
+        }
+    });
+}
+
+function startCountdown(lostId) {
+    document.getElementById('countdownModal').classList.remove('hidden');
+    let timeLeft = 60;
+    document.getElementById('countdownTimer').innerText = timeLeft;
+    
+    // Clear previous if any
+    if (countdownInterval) clearInterval(countdownInterval);
+    if (pollingInterval) clearInterval(pollingInterval);
+
+    countdownInterval = setInterval(() => {
+        timeLeft--;
+        document.getElementById('countdownTimer').innerText = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(countdownInterval);
+            clearInterval(pollingInterval);
+            // Timeout
+            handleTimeout(lostId);
+        }
+    }, 1000);
+    
+    // Poll every 3 seconds
+    pollingInterval = setInterval(() => {
+        pollItemStatus(lostId);
+    }, 3000);
+}
+
+function handleTimeout(lostId) {
+    document.getElementById('countdownModal').classList.add('hidden');
+    Swal.fire({
+        icon: 'error',
+        title: 'หมดเวลา',
+        text: 'การยืนยันตัวตนหมดเวลา กรุณาลองใหม่',
+        confirmButtonText: 'ตกลง'
+    });
+    // Call backend to cancel to keep state clean
+    callApi('cancelReturn', { lostId: lostId });
+    loadItems();
+}
+
+function pollItemStatus(lostId) {
+    console.log("Polling status for:", lostId);
+    callApi('getAllData', {}).then(data => {
+        if (Array.isArray(data)) {
+            const item = data.find(row => row[0] === lostId);
+            if (item) {
+                const status = String(item[8]).trim(); // Trim status
+                console.log("Current status:", status);
+                if (status === 'คืนแล้ว') {
+                    // Success!
+                    clearInterval(countdownInterval);
+                    clearInterval(pollingInterval);
+                    document.getElementById('countdownModal').classList.add('hidden');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'ยืนยันการรับคืนเรียบร้อย',
+                        text: 'โปรดรับของและตรวจสอบให้แน่ใจว่าเป็นของท่าน',
+                        timer: 5000,
+                        showConfirmButton: false
+                    });
+                     loadItems();
+                } else if (status === 'รอการคืน') {
+                    // Admin cancelled
+                    clearInterval(countdownInterval);
+                    clearInterval(pollingInterval);
+                    document.getElementById('countdownModal').classList.add('hidden');
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'ยกเลิกรายการ',
+                        text: 'เจ้าหน้าที่ได้ยกเลิกรายการ',
+                        confirmButtonText: 'ตกลง'
+                    });
+                     loadItems();
+                }
+            } else {
+                console.error("Item not found in polling data");
+            }
+        }
+    });
+}
+
+function checkAdminPendingRequests(items) {
+    if (items.length === 0 || isVerifying) return;
+    
+    const item = items[0];
+    isVerifying = true;
+    
+    Swal.fire({
+        title: 'คำร้องขอรับคืน',
+        html: `นักเรียน: <b>${item[2]}</b><br>รายการ: ${item[3]}<br><br>โปรดตรวจสอบให้แน่ใจว่านักเรียนกรอกรหัสรับคืนสำเร็จก่อนกดยืนยัน`,
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยัน',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#ef4444',
+        allowOutsideClick: false
+    }).then((result) => {
+        isVerifying = false;
+        if (result.isConfirmed) {
+            confirmReturnItem(item[0]);
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+            cancelReturnItem(item[0]);
+        }
+    });
+}
+
+function confirmReturnItem(lostId) {
+    toggleLoading(true);
+    callApi('confirmReturn', { lostId: lostId }).then(res => {
+        toggleLoading(false);
+        if (res.success) {
+            Swal.fire({
+                title: 'สำเร็จ', 
+                text: 'ยืนยันการคืนเรียบร้อย', 
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false
+            });
+            loadItems();
+        }
+    });
+}
+
+function cancelReturnItem(lostId) {
+    toggleLoading(true);
+    callApi('cancelReturn', { lostId: lostId }).then(res => {
+        toggleLoading(false);
+        if (res.success) {
+             Swal.fire({
+                title: 'ยกเลิกแล้ว', 
+                text: 'รายการถูกยกเลิก', 
+                icon: 'info',
+                timer: 1500,
+                showConfirmButton: false
+            });
+            loadItems();
+        }
+    });
+}
+
+// Auto poll for admin every 5 seconds to catch new requests
+setInterval(() => {
+    if (currentUser && currentUser.isAdmin && !isVerifying) {
+        loadItems(true);
+    }
+}, 5000);
+
+// We'll modify toggleLoading to handle silent mode if needed, but for now
+// let's just respect the user manually refreshing or clicking.
+// Wait, the prompt implies a real-time-ish flow.
+// "When user fills return code... Admin sees..."
+// I should add the admin poll.

@@ -33,10 +33,12 @@ body {
   position: fixed;
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle,
-      rgba(255, 133, 161, 0.4) 0%,
-      rgba(139, 92, 246, 0.2) 30%,
-      transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(255, 133, 161, 0.4) 0%,
+    rgba(139, 92, 246, 0.2) 30%,
+    transparent 70%
+  );
   border-radius: 50%;
   pointer-events: none;
   transform: translate(-50%, -50%);
@@ -58,7 +60,6 @@ body {
 }
 
 @keyframes logoPulse {
-
   0%,
   100% {
     box-shadow:
@@ -115,7 +116,6 @@ body {
 }
 
 @keyframes cardFloat {
-
   0%,
   100% {
     transform: translateY(0);
@@ -173,7 +173,6 @@ body {
 }
 
 @keyframes gradientMove {
-
   0%,
   100% {
     background-position: 0% 50%;
@@ -303,7 +302,6 @@ button {
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     box-shadow: 0 4px 6px rgba(46, 204, 113, 0.2);
@@ -461,11 +459,13 @@ button[onclick="handleLogout()"]:hover {
   align-items: center;
   color: #cbd5e1;
   font-weight: 500;
-  background: repeating-linear-gradient(45deg,
-      #f8fafc,
-      #f8fafc 10px,
-      #f1f5f9 10px,
-      #f1f5f9 20px);
+  background: repeating-linear-gradient(
+    45deg,
+    #f8fafc,
+    #f8fafc 10px,
+    #f1f5f9 10px,
+    #f1f5f9 20px
+  );
 }
 
 .card-body {
@@ -603,9 +603,11 @@ button[onclick="handleLogout()"]:hover {
 
 .particle {
   position: absolute;
-  background: radial-gradient(circle,
-      rgba(255, 133, 161, 0.6),
-      rgba(139, 92, 246, 0.3));
+  background: radial-gradient(
+    circle,
+    rgba(255, 133, 161, 0.6),
+    rgba(139, 92, 246, 0.3)
+  );
   border-radius: 50%;
   animation: float 15s infinite ease-in-out;
   transition: transform 0.3s ease-out;
@@ -849,11 +851,13 @@ button[onclick="handleLogout()"]:hover {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: repeating-linear-gradient(45deg,
-      #f8fafc,
-      #f8fafc 10px,
-      #f1f5f9 10px,
-      #f1f5f9 20px);
+  background: repeating-linear-gradient(
+    45deg,
+    #f8fafc,
+    #f8fafc 10px,
+    #f1f5f9 10px,
+    #f1f5f9 20px
+  );
   color: #cbd5e1;
   font-weight: 500;
   font-size: 0.9rem;
@@ -938,13 +942,14 @@ button[onclick="handleLogout()"]:hover {
 }
 
 @keyframes adminPulse {
-
   0%,
   100% {
     box-shadow: 0 2px 8px rgba(255, 107, 107, 0.4);
   }
 
   50% {
-    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.4), 0 0 20px rgba(255, 107, 107, 0.6);
+    box-shadow:
+      0 2px 8px rgba(255, 107, 107, 0.4),
+      0 0 20px rgba(255, 107, 107, 0.6);
   }
 }
