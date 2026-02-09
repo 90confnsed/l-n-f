@@ -294,3 +294,122 @@ function cancelReturn(data) {
    }
    return { success: false, message: "ไม่พบรายการ" };
 }
+
+// Google Form Integration Logic
+
+function syncLinkForms() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const lostItemSheet = ss.getSheetByName("lost_item");
+  if (!lostItemSheet) return; // Should exist
+
+  // 1. Process "แจ้งของหาย" (Report Lost) -> Status: "ยังไม่พบ"
+  // Columns: Timestamp(0), รายละเอียด(1), สถานที่(2), วันที่(3), เวลา(4), รูป(5), ชื่อ(6)
+  processSheet(ss, "แจ้งของหาย", lostItemSheet, "ยังไม่พบ", [0, 6, 1, 2, 5, 3, 4]);
+
+  // 2. Process "แจ้งหาเจ้าofของ" (Report Found) -> Status: "รอการคืน"
+  // Note: User prompt said "แจ้งหาเจ้าของ"
+  // Columns: Timestamp(0), ชื่อ(1), รายละเอียด(2), สถานที่(3), วันที่(4), เวลา(5), รูป(6)
+  processSheet(ss, "แจ้งหาเจ้าของ", lostItemSheet, "รอการคืน", [0, 1, 2, 3, 6, 4, 5]);
+}
+
+function processSheet(ss, sourceSheetName, targetSheet, defaultStatus, colMap) {
+  const sourceSheet = ss.getSheetByName(sourceSheetName);
+  if (!sourceSheet) return;
+
+  const data = sourceSheet.getDataRange().getValues();
+  if (data.length < 2) return; // No data
+
+  // Check if "Processed" column exists, if not add it
+  // We'll search for "Processed" header.
+  let procCol = -1;
+  for(let i=0; i<data[0].length; i++) {
+      if(String(data[0][i]).toLowerCase() === "processed") {
+          procCol = i;
+          break;
+      }
+  }
+  
+  // If not found, create header
+  if (procCol === -1) {
+      procCol = data[0].length;
+      sourceSheet.getRange(1, procCol + 1).setValue("Processed");
+  }
+
+  // Iterate rows (skip header)
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+    // Check if processed (Handle various TRUE values)
+    if (row[procCol] === true || String(row[procCol]).toUpperCase() === "TRUE") continue;
+
+    // Map data
+    // colMap: [Timestamp, OwnerName, Info, Place, Pic, Date, Time]
+    const timestamp = row[colMap[0]];
+    const ownerName = row[colMap[1]];
+    const info = row[colMap[2]];
+    const place = row[colMap[3]];
+    const picUrlRaw = row[colMap[4]];
+    const dateFound = row[colMap[5]];
+    const timeFound = row[colMap[6]];
+
+    // Format Date/Time for Last_time_found
+    let lastTimeFound = "";
+    try {
+        if (dateFound) {
+             const d = new Date(dateFound);
+             // Verify date is valid
+             if (!isNaN( d.getTime() )) {
+                 const dateStr = d.toLocaleDateString("th-TH");
+                 let timeStr = "";
+                 if (timeFound) {
+                    // timeFound might be a Date object (if collected via Time question) or string
+                    if (timeFound instanceof Date) {
+                        timeStr = timeFound.toLocaleTimeString("th-TH", {hour: '2-digit', minute:'2-digit'});
+                    } else {
+                        // Sometimes Time comes as "14:30" string
+                        timeStr = String(timeFound);
+                        // If it's a date string, extract time? Let's keep simple.
+                    }
+                 }
+                 lastTimeFound = dateStr + " " + timeStr;
+             } else {
+                 lastTimeFound = String(dateFound); // Fallback
+             }
+        }
+    } catch(e) {
+        lastTimeFound = String(dateFound) + " " + String(timeFound);
+    }
+
+    // Process Image URL
+    let picUrl = "";
+    if (picUrlRaw) {
+        const urlStr = String(picUrlRaw);
+        const idMatch = urlStr.match(/id=([a-zA-Z0-9_-]+)/);
+        if (idMatch && idMatch[1]) {
+            picUrl = "https://drive.google.com/thumbnail?id=" + idMatch[1] + "&sz=w1000";
+        } else if (urlStr.includes("drive.google.com")) {
+             // Fallback for other drive links
+             picUrl = urlStr;
+        }
+    }
+
+    // Generate UUID
+    const lostId = Utilities.getUuid();
+    
+    // Append to lost_item
+    // Order: lost_id, timestamp, owner_name, info, place, pic, User_id, Last_time_found, found_status
+    targetSheet.appendRow([
+        lostId,
+        timestamp || new Date(),
+        ownerName,
+        info,
+        place,
+        picUrl,
+        "", // User_id (Empty for external form)
+        lastTimeFound,
+        defaultStatus
+    ]);
+
+    // Mark processed
+    sourceSheet.getRange(i + 1, procCol + 1).setValue("TRUE");
+  }
+}

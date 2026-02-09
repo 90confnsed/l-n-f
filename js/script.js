@@ -258,9 +258,31 @@ function handleLogout() {
     localStorage.removeItem("currentUser");
     document.getElementById('mainPage').classList.add('hidden');
     document.getElementById('authContainer').classList.remove('hidden');
-    // Clear inputs
     document.getElementById('loginInput').value = "";
     document.getElementById('loginPassword').value = "";
+}
+
+// Guest Report Logic
+function showGuestReportOptions() {
+    Swal.fire({
+        title: 'เลือกประเภทการรายงาน',
+        text: 'กรุณาเลือกประเภทการรายงานที่คุณต้องการ',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'แจ้งของหาย',
+        cancelButtonText: 'แจ้งหาเจ้าของ',
+        confirmButtonColor: '#e74c3c',
+        cancelButtonColor: '#3085d6',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Report Lost
+            window.open('https://forms.gle/P8mpnDtEwEQhKYtw8', '_blank');
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+            // Report Found
+            window.open('https://forms.gle/MnqFdDzjHnVCogyC8', '_blank');
+        }
+    });
 }
 
 // Data Handling (Lost Items)
