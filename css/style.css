@@ -1,24 +1,23 @@
 /* --- Modern CSS Upgrade --- */
 :root {
-  --primary-color: #6366f1;
-  /* Indigo */
-  --accent-color: #8b5cf6;
-  /* Violet */
+  --primary-color: #0f172a;
+  /* Slate 900 */
+  --accent-color: #3b82f6;
+  /* Blue 500 */
   --success-color: #10b981;
   /* Emerald */
   --danger-color: #ef4444;
   /* Red */
   --bg-gradient: linear-gradient(135deg, #fce4ec 0%, #f3e8ff 100%);
-  --card-bg: #ffffff;
+  --card-bg: rgba(255, 255, 255, 0.85);
   --text-primary: #1e293b;
   --text-secondary: #64748b;
 }
 
 body {
   font-family: "Kanit", sans-serif;
-  background: linear-gradient(-45deg, #eef2ff, #f3e8ff, #fae8ff, #fff1f2);
-  background-size: 400% 400%;
-  animation: gradientShift 15s ease infinite;
+  background: url("../background.jpg") no-repeat center center fixed;
+  background-size: cover;
   margin: 0;
   color: var(--text-primary);
   min-height: 100vh;
@@ -92,15 +91,14 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: url("background.gif");
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
   z-index: 9999;
+  /* Background is now on body to be consistent */
+  background: transparent;
 }
 
 .login-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
   padding: 40px 40px;
   border-radius: 20px;
   text-align: center;
@@ -215,7 +213,8 @@ a:hover {
 .main-container {
   max-width: 1200px;
   margin: 40px auto;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
   border-radius: 24px;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
@@ -223,7 +222,7 @@ a:hover {
 }
 
 .header {
-  background: white;
+  background: transparent;
   color: var(--primary-color);
   padding: 25px 40px;
   display: flex;
@@ -367,7 +366,7 @@ button[onclick="handleLogout()"]:hover {
 }
 
 .item-card {
-  background: var(--card-bg);
+  background: rgba(255, 255, 255, 0.9);
   border-radius: 16px;
   overflow: hidden;
   box-shadow:

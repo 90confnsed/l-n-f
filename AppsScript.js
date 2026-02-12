@@ -69,7 +69,8 @@ function registerUser(data) {
   // Check for duplicate Email or Student ID in the wait list
   // New Indices: 1=Email, 7=Student ID
   for (let i = 1; i < values.length; i++) {
-    if (values[i][1] === data.email || values[i][7] === data.studentId) {
+    // Force string comparison for Student ID (index 7) to avoid Number vs String mismatch
+    if (String(values[i][1]) === String(data.email) || String(values[i][7]) === String(data.studentId)) {
       return "DUPLICATE";
     }
   }
@@ -79,7 +80,7 @@ function registerUser(data) {
   if (mainSheet) {
     const mainValues = mainSheet.getDataRange().getValues();
     for (let i = 1; i < mainValues.length; i++) {
-      if (mainValues[i][1] === data.email || mainValues[i][7] === data.studentId) {
+      if (String(mainValues[i][1]) === String(data.email) || String(mainValues[i][7]) === String(data.studentId)) {
         return "DUPLICATE";
       }
     }
@@ -139,7 +140,8 @@ function loginUser(input, password) {
   const values = mainSheet.getDataRange().getValues();
   for (let i = 1; i < values.length; i++) {
     // Indices: 1: Email, 7: Student ID, 8: Password
-    if ((values[i][1] === input || values[i][7] === input) && values[i][8] === password) {
+    // Force string comparison for input and stored values
+    if ((String(values[i][1]) === String(input) || String(values[i][7]) === String(input)) && String(values[i][8]) === String(password)) {
       return {
         success: true,
         user: {
