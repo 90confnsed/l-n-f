@@ -367,6 +367,40 @@ button[onclick="handleLogout()"]:hover {
   box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
 }
 
+/* Filter Section */
+.filter-section {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+  padding: 0 20px;
+}
+
+.filter-btn {
+  padding: 8px 20px;
+  border: 1px solid #cbd5e1;
+  border-radius: 20px;
+  background: white;
+  color: var(--text-secondary);
+  font-family: "Kanit", sans-serif;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+  background: #f1f5f9;
+  transform: translateY(-2px);
+}
+
+.filter-btn.active {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
 /* Item Grid & Card Styles */
 .item-grid {
   display: grid;

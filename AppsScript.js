@@ -165,7 +165,7 @@ function saveData(obj) {
   let sheet = ss.getSheetByName("lost_item");
   if (!sheet) {
     sheet = ss.insertSheet("lost_item");
-    sheet.appendRow(["lost_id", "timestamp", "owner_name", "info", "place", "pic", "User_id", "Last_time_found", "found_status"]);
+    sheet.appendRow(["lost_id", "timestamp", "owner_name", "info", "place", "pic", "User_id", "Last_time_found", "found_status", "type"]);
   }
 
   let imageUrl = "";
@@ -178,7 +178,7 @@ function saveData(obj) {
   }
 
   const lostId = Utilities.getUuid();
-  // Columns: lost_id, timestamp, owner_name, info, place, pic, User_id, Last_time_found, found_status
+  // Columns: lost_id, timestamp, owner_name, info, place, pic, User_id, Last_time_found, found_status, type
   sheet.appendRow([
     lostId,
     new Date(),
@@ -188,7 +188,8 @@ function saveData(obj) {
     imageUrl,
     obj.userId,
     obj.foundTime || "", // Last_time_found
-    obj.reportType || "ยังไม่พบ" // found_status (use reportType from frontend, default: Not Found)
+    obj.reportType === 'found' ? 'รอยืนยันเจ้าของ' : 'ยังไม่พบ', // Default status based on type
+    obj.type // 'lost' or 'found'
   ]);
   return true;
 }

@@ -17,7 +17,7 @@
     <div id="cursor-spotlight"></div>
     <div id="loading" class="hidden">กำลังโหลดข้อมูล...</div>
 
-    <div id="authContainer">
+    <div id="authContainer" class="hidden">
       <div class="full-screen">
         <!-- Login Card -->
         <div id="loginCard" class="login-card">
@@ -27,7 +27,7 @@
             class="site-logo-large"
           />
           <h2>LOST & FOUND</h2>
-          <p>ของหายต้องได้คืน</p>
+          <p>ของใคร ใครก็รัก</p>
           <input
             type="text"
             id="loginInput"
@@ -59,6 +59,15 @@
           <p style="margin-top: 15px; font-size: 0.9rem">
             ยังไม่มีบัญชี? <a href="#" onclick="showRegister()">ลงทะเบียน</a>
           </p>
+          <button
+            class="btn-secondary"
+            onclick="
+              document.getElementById('authContainer').classList.add('hidden')
+            "
+            style="margin-top: 10px; width: 100%; font-size: 0.9rem"
+          >
+            เข้าใช้งานแบบไม่ Login
+          </button>
           <button
             class="btn-secondary"
             onclick="showGuestReportOptions()"
@@ -244,7 +253,7 @@
       </div>
     </div>
 
-    <div id="mainPage" class="main-container hidden">
+    <div id="mainPage" class="main-container">
       <div class="header">
         <div style="display: flex; align-items: center; gap: 15px">
           <img
@@ -256,7 +265,20 @@
         </div>
         <div>
           <span id="userDisplay" style="margin-right: 15px"></span>
-          <button onclick="handleLogout()" style="cursor: pointer">
+          <button
+            id="btnLogin"
+            onclick="showLogin()"
+            class="btn-primary"
+            style="cursor: pointer; display: none"
+          >
+            Login
+          </button>
+          <button
+            id="btnLogout"
+            onclick="handleLogout()"
+            class="btn-secondary"
+            style="cursor: pointer; display: none"
+          >
             Logout
           </button>
         </div>
@@ -305,6 +327,36 @@
           </button>
           <button class="btn-save" onclick="saveData()">บันทึกข้อมูล</button>
         </div>
+      </div>
+
+      <!-- Filter Section -->
+      <div class="filter-section">
+        <button class="filter-btn active" onclick="filterItems('all', this)">
+          ทั้งหมด
+        </button>
+        <button class="filter-btn" onclick="filterItems('lost', this)">
+          ของหาย
+        </button>
+        <button class="filter-btn" onclick="filterItems('found', this)">
+          หาเจ้าของ
+        </button>
+        <button class="filter-btn" onclick="filterItems('waiting', this)">
+          รอรับคืน
+        </button>
+        <button class="filter-btn" onclick="filterItems('returned', this)">
+          คืนแล้ว
+        </button>
+        <button
+          class="filter-btn"
+          onclick="loadItems()"
+          style="
+            background-color: #f1f5f9;
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+          "
+        >
+          🔄 รีเฟรช
+        </button>
       </div>
 
       <!-- New Grid Layout -->

@@ -1,5 +1,6 @@
 // Global variables to store user session
 let currentUser = null;
+let currentFilter = 'all'; // Default filter
 const API_URL = "https://script.google.com/macros/s/AKfycbzBolUcFz1APeymizFfYTprGGzzNPQMtxt8psc48m_u3E8n1llswMXdb_NEbluBct0T/exec";
 
 async function callApi(action, payload) {
@@ -16,25 +17,73 @@ async function callApi(action, payload) {
     }
 }
 
+// Helper: Format Date
+function formatDate(dateString) {
+    if (!dateString || dateString === '-') return '-';
+    
+    // Try parsing
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString; // Return original if not a valid date
+
+    // Fix for double conversion (if year > 2400, it's likely already BE, so subtract 543 to make it AD for toLocaleString)
+    if (date.getFullYear() > 2400) {
+        date.setFullYear(date.getFullYear() - 543);
+    }
+
+    // Format to Thai Date
+    return date.toLocaleString('th-TH', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
 // Auto Login on Load
 window.onload = function () {
     const savedUser = localStorage.getItem("currentUser");
     if (savedUser) {
         currentUser = JSON.parse(savedUser);
-        document.getElementById('authContainer').classList.add('hidden');
-        document.getElementById('mainPage').classList.remove('hidden');
-
-        // Display user name with admin badge if applicable
-        const userDisplayText = "สวัสดี, " + currentUser.name;
-        const adminBadge = currentUser.isAdmin ? ' <span class="admin-badge">ADMIN</span>' : '';
-        document.getElementById('userDisplay').innerHTML = userDisplayText + adminBadge;
-
-        loadItems();
+        updateUI(currentUser);
+    } else {
+        updateUI(null);
     }
+
+    loadItems(); // Always load items
 
     // Initialize cursor effects
     initCursorEffects();
 };
+
+function updateUI(user) {
+    const authContainer = document.getElementById('authContainer');
+    const btnLogin = document.getElementById('btnLogin');
+    const btnLogout = document.getElementById('btnLogout');
+    const userDisplay = document.getElementById('userDisplay');
+    const inputSection = document.querySelector('.input-section');
+
+    if (user) {
+        // User is logged in
+        authContainer.classList.add('hidden');
+        btnLogin.style.display = 'none';
+        btnLogout.style.display = 'inline-block';
+        
+        const userDisplayText = "สวัสดี, " + user.name;
+        const adminBadge = user.isAdmin ? ' <span class="admin-badge">ADMIN</span>' : '';
+        userDisplay.innerHTML = userDisplayText + adminBadge;
+        
+        if (inputSection) inputSection.classList.remove('hidden');
+    } else {
+        // Guest mode
+        authContainer.classList.add('hidden'); // Ensure auth is hidden initially for guests too (they see list)
+        btnLogin.style.display = 'inline-block';
+        btnLogout.style.display = 'none';
+        userDisplay.innerHTML = '';
+        
+        if (inputSection) inputSection.classList.add('hidden');
+    }
+}
 
 // Cursor Interaction Effects
 function initCursorEffects() {
@@ -94,6 +143,7 @@ function showLogin() {
     document.getElementById('registerCard').classList.add('hidden');
     document.getElementById('successCard').classList.add('hidden'); // Ensure success card is hidden
     document.getElementById('loginCard').classList.remove('hidden');
+    document.getElementById('authContainer').classList.remove('hidden');
 }
 
 function closeSuccessCard() {
@@ -219,21 +269,15 @@ function handleLogin() {
         toggleLoading(false);
         if (response.success) {
             currentUser = response.user;
-            document.getElementById('authContainer').classList.add('hidden');
-            document.getElementById('mainPage').classList.remove('hidden');
-
-            // Display user name with admin badge if applicable
-            const userDisplayText = "สวัสดี, " + currentUser.name;
-            const adminBadge = currentUser.isAdmin ? ' <span class="admin-badge">ADMIN</span>' : '';
-            document.getElementById('userDisplay').innerHTML = userDisplayText + adminBadge;
 
             // Check Remember Me
             const rememberMe = document.getElementById('rememberMe').checked;
             if (rememberMe) {
                 localStorage.setItem("currentUser", JSON.stringify(currentUser));
             }
-
-            loadItems(); // Load lost items
+            
+            updateUI(currentUser);
+            loadItems(); // Load lost items (refresh to show edit/return buttons)
         } else {
             Swal.fire({
                 icon: 'error',
@@ -256,8 +300,8 @@ function handleLogin() {
 function handleLogout() {
     currentUser = null;
     localStorage.removeItem("currentUser");
-    document.getElementById('mainPage').classList.add('hidden');
-    document.getElementById('authContainer').classList.remove('hidden');
+    updateUI(null);
+    loadItems(); // Refresh items to remove admin/user buttons
     document.getElementById('loginInput').value = "";
     document.getElementById('loginPassword').value = "";
 }
@@ -328,10 +372,13 @@ function saveData() {
         reverseButtons: true
     }).then((result) => {
         let reportType = '';
+        let type = '';
         if (result.isConfirmed) {
             reportType = 'ยังไม่พบ'; // Lost item
+            type = 'lost';
         } else if (result.dismiss === Swal.DismissReason.cancel) {
             reportType = 'รอยืนยันเจ้าของ'; // Found item, waiting to confirm owner
+            type = 'found';
         } else {
             return; // User closed the dialog
         }
@@ -352,7 +399,8 @@ function saveData() {
                     base64: base64,
                     owner_name: ownerName,
                     userId: currentUser.userId,
-                    reportType: reportType
+                    reportType: reportType,
+                    type: type
                 };
                 sendDataToBackend(obj);
             };
@@ -364,7 +412,8 @@ function saveData() {
                 foundTime: foundTime ? new Date(foundTime).toLocaleString('th-TH') : '',
                 owner_name: ownerName,
                 userId: currentUser.userId,
-                reportType: reportType
+                reportType: reportType,
+                type: type
             };
             sendDataToBackend(obj);
         }
@@ -401,63 +450,21 @@ function loadItems(silent = false) {
     if (!silent) toggleLoading(true);
     callApi("getAllData", {}).then(data => {
         if (!silent) toggleLoading(false);
-        const itemGrid = document.getElementById('itemGrid');
-        itemGrid.innerHTML = "";
         
         // Polling check for Admin
         let itemsToVerify = [];
 
-        // data is already an object (array) because callApi parses JSON
-
-        // Reverse to show newest first
         if (Array.isArray(data)) {
-            data.reverse().forEach(row => {
-                // Backend Columns: 
-                // 0: lost_id, 1: timestamp, 2: owner_name, 3: info, 4: place, 
-                // 5: pic, 6: User_id, 7: Last_time_found, 8: found_status
-
-                const card = document.createElement('div');
-                card.className = 'item-card';
-
-                // Format Date
-                const date = new Date(row[1]).toLocaleDateString('th-TH');
-
-                let imgHtml = row[5] ? `<img src="${row[5]}" class="item-image" onclick="openImageModal('${row[5]}')" style="cursor: pointer;">` : `<div class="no-image">ไม่มีรูปภาพ</div>`;
-
-                // Only show update button if user is admin
-                const updateButton = currentUser && currentUser.isAdmin ? `
-                    <button onclick="openUpdateModal('${row[0]}', '${row[7] || ''}', '${row[4]}', '${row[8]}')" 
-                            class="btn-update">
-                        อัปเดต
-                    </button>
-                ` : '';
-
-                // Request Return Button (User only)
-                let requestReturnBtn = '';
-                if (currentUser && !currentUser.isAdmin && row[8] === 'รอการคืน' && String(row[6]) === String(currentUser.userId)) {
-                    requestReturnBtn = `<button onclick="openReturnModal('${row[0]}')" class="btn-primary" style="margin-top: 10px; width: 100%;">ขอรับคืน</button>`;
-                }
-                
-                // Collect verification items for Admin
-                if (row[8] === 'กำลังยืนยัน') {
+            // Check for admin verification items before rendering
+            data.forEach(row => {
+                 if (row[8] === 'กำลังยืนยัน') {
                     itemsToVerify.push(row);
                 }
-
-                card.innerHTML = `
-                    ${imgHtml}
-                    <div class="item-details">
-                        <h3>${row[3]}</h3>
-                        <p><strong>ผู้รายงาน:</strong> ${row[2]}</p>
-                        <p><strong>สถานที่:</strong> ${row[4]}</p>
-                        <p><strong>วันที่รายงาน:</strong> ${date}</p>
-                        <p><strong>เห็นล่าสุด:</strong> ${row[7] || '-'}</p>
-                        <p><strong>สถานะ:</strong> <span class="status-badge status-${row[8].replace(/\s+/g, '-')}">${row[8]}</span></p>
-                        ${updateButton}
-                        ${requestReturnBtn}
-                    </div>
-                `;
-                itemGrid.appendChild(card);
             });
+
+            // Store data globally or pass to render
+            window.allItemsData = data.reverse(); 
+            renderItems(window.allItemsData);
             
             // Trigger Admin Verification Alert
             if (currentUser && currentUser.isAdmin && itemsToVerify.length > 0) {
@@ -468,6 +475,83 @@ function loadItems(silent = false) {
         toggleLoading(false);
         console.error(err);
     });
+}
+
+function renderItems(data) {
+    const itemGrid = document.getElementById('itemGrid');
+    itemGrid.innerHTML = "";
+
+    const filteredData = data.filter(row => {
+        if (currentFilter === 'all') return true;
+        if (currentFilter === 'lost') return row[9] === 'lost';
+        if (currentFilter === 'found') return row[9] === 'found';
+        if (currentFilter === 'waiting') return row[8] === 'รอการคืน';
+        if (currentFilter === 'returned') return row[8] === 'คืนแล้ว';
+        return false;
+    });
+
+    if (filteredData.length === 0) {
+        itemGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 40px;">ไม่พบข้อมูล</div>';
+        return;
+    }
+
+    filteredData.forEach(row => {
+        // Backend Columns: 
+        // 0: lost_id, 1: timestamp, 2: owner_name, 3: info, 4: place, 
+        // 5: pic, 6: User_id, 7: Last_time_found, 8: found_status
+
+        const card = document.createElement('div');
+        card.className = 'item-card';
+
+        // Format Date (Reported Time)
+        const date = formatDate(row[1]);
+        // Format Last Seen Time
+        const lastSeen = formatDate(row[7]);
+
+        let imgHtml = row[5] ? `<img src="${row[5]}" class="item-image" onclick="openImageModal('${row[5]}')" style="cursor: pointer;">` : `<div class="no-image">ไม่มีรูปภาพ</div>`;
+
+        // Only show update button if user is admin
+        const updateButton = currentUser && currentUser.isAdmin ? `
+            <button onclick="openUpdateModal('${row[0]}', '${row[7] || ''}', '${row[4]}', '${row[8]}')" 
+                    class="btn-update">
+                อัปเดต
+            </button>
+        ` : '';
+
+        // Request Return Button (User only)
+        let requestReturnBtn = '';
+        if (currentUser && !currentUser.isAdmin && row[8] === 'รอการคืน' && String(row[6]) === String(currentUser.userId)) {
+            requestReturnBtn = `<button onclick="openReturnModal('${row[0]}')" class="btn-primary" style="margin-top: 10px; width: 100%;">ขอรับคืน</button>`;
+        }
+
+        card.innerHTML = `
+            ${imgHtml}
+            <div class="item-details">
+                <h3>${row[3]}</h3>
+                <p><strong>ผู้รายงาน:</strong> ${row[2]}</p>
+                <p><strong>สถานที่:</strong> ${row[4]}</p>
+                <p><strong>วันที่รายงาน:</strong> ${date}</p>
+                <p><strong>เห็นล่าสุด:</strong> ${lastSeen}</p>
+                <p><strong>สถานะ:</strong> <span class="status-badge status-${row[8].replace(/\s+/g, '-')}">${row[8]}</span></p>
+                ${updateButton}
+                ${requestReturnBtn}
+            </div>
+        `;
+        itemGrid.appendChild(card);
+    });
+}
+
+function filterItems(status, btn) {
+    currentFilter = status;
+
+    // Update active button
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // Re-render items if we have data
+    if (window.allItemsData) {
+        renderItems(window.allItemsData);
+    }
 }
 
 // Modal Functions for Update Found Info
